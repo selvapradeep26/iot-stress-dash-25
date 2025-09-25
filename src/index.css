@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Stress Management App Design System - Modern Coral Theme */
+
+@layer base {
+  :root {
+    /* Background & surfaces */
+    --background: 240 10% 98%;
+    --foreground: 220 20% 15%;
+    --surface: 0 0% 100%;
+    --surface-secondary: 240 8% 96%;
+
+    /* Card system */
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 15%;
+    --card-border: 220 13% 91%;
+
+    /* Primary coral/red theme */
+    --primary: 0 72% 61%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 0 82% 71%;
+    --primary-dark: 0 62% 51%;
+
+    /* Secondary blue/teal accents */
+    --secondary: 180 25% 72%;
+    --secondary-foreground: 220 20% 15%;
+    --secondary-light: 180 35% 82%;
+    --secondary-dark: 180 15% 62%;
+
+    /* Status colors for stress levels */
+    --stress-low: 120 60% 55%;
+    --stress-medium: 35 85% 60%;
+    --stress-high: 0 72% 61%;
+    --stress-critical: 0 82% 51%;
+
+    /* Neutral palette */
+    --muted: 240 8% 96%;
+    --muted-foreground: 240 6% 46%;
+    --accent: 240 12% 94%;
+    --accent-foreground: 220 20% 15%;
+
+    /* Interactive states */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 0 72% 61%;
+    --destructive: 0 72% 61%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
+    --gradient-surface: linear-gradient(180deg, hsl(var(--background)), hsl(var(--surface-secondary)));
+
+    /* Shadows */
+    --shadow-sm: 0 2px 4px -1px hsl(var(--primary) / 0.1);
+    --shadow-md: 0 4px 12px -2px hsl(var(--primary) / 0.15);
+    --shadow-lg: 0 10px 30px -10px hsl(var(--primary) / 0.2);
+    --shadow-glow: 0 0 40px hsl(var(--primary) / 0.3);
+
+    /* Spacing & sizing */
+    --radius: 0.75rem;
+    --radius-sm: 0.5rem;
+    --radius-lg: 1rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark mode backgrounds */
+    --background: 220 20% 8%;
+    --foreground: 220 15% 95%;
+    --surface: 220 20% 10%;
+    --surface-secondary: 220 15% 12%;
+
+    /* Dark mode cards */
+    --card: 220 20% 10%;
+    --card-foreground: 220 15% 95%;
+    --card-border: 220 15% 18%;
+
+    /* Primary remains coral but adjusted for dark mode */
+    --primary: 0 72% 61%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 0 82% 71%;
+    --primary-dark: 0 62% 51%;
+
+    /* Secondary adjusted for dark mode */
+    --secondary: 180 25% 72%;
+    --secondary-foreground: 220 20% 8%;
+    --secondary-light: 180 35% 82%;
+    --secondary-dark: 180 15% 62%;
+
+    /* Status colors remain consistent */
+    --stress-low: 120 60% 55%;
+    --stress-medium: 35 85% 60%;
+    --stress-high: 0 72% 61%;
+    --stress-critical: 0 82% 51%;
+
+    /* Dark mode neutrals */
+    --muted: 220 15% 15%;
+    --muted-foreground: 220 10% 65%;
+    --accent: 220 15% 18%;
+    --accent-foreground: 220 15% 95%;
+
+    /* Interactive elements */
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 0 72% 61%;
+    --destructive: 0 72% 61%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Popover for dark mode */
+    --popover: 220 20% 10%;
+    --popover-foreground: 220 15% 95%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
