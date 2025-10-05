@@ -52,13 +52,13 @@ const Contact = () => {
     {
       icon: Phone,
       title: "Call Us",
-      content: "+1 (555) 123-4567",
-      description: "Mon-Fri 9AM-6PM EST"
+      content: "+91 98765 43210",
+      description: "Mon-Fri 9AM-6PM IST"
     },
     {
       icon: MapPin,
       title: "Visit Us",
-      content: "123 Wellness Street, Health City, HC 12345",
+      content: "ABC Street, Mumbai, India",
       description: "Our headquarters"
     }
   ];
