@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StressCircle from "@/components/StressCircle";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { User, Mail, Briefcase, Clock, TrendingUp, Activity, Heart } from "lucide-react";
 
 const Dashboard = () => {
@@ -130,7 +130,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stressData}>
+                <BarChart data={stressData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="date" 
@@ -148,15 +148,12 @@ const Dashboard = () => {
                       borderRadius: "var(--radius)",
                     }}
                   />
-                  <Line 
-                    type="monotone" 
+                  <Bar 
                     dataKey="stress" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={3}
-                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: "hsl(var(--primary))", strokeWidth: 2 }}
+                    fill="hsl(var(--primary))"
+                    radius={[6, 6, 0, 0]}
                   />
-                </LineChart>
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
