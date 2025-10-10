@@ -130,7 +130,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stressData}>
+                <BarChart data={stressData} barCategoryGap={14}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="date" 
@@ -152,6 +152,7 @@ const Dashboard = () => {
                     dataKey="stress" 
                     fill="hsl(var(--primary))"
                     radius={[6, 6, 0, 0]}
+                    barSize={28}
                   />
                 </BarChart>
               </ResponsiveContainer>
