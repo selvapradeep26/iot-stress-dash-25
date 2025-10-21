@@ -20,23 +20,46 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate login process
-    setTimeout(() => {
-      if (email && password) {
+    try {
+      // Call backend login API
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Show backend error
+        toast({
+          title: "Login failed",
+          description: data.message || "Please check your credentials and try again.",
+          variant: "destructive",
+        });
+      } else {
+        // Save token for later API calls
+        localStorage.setItem("token", data.token);
+
         toast({
           title: "Welcome back!",
           description: "Login successful. Redirecting to dashboard...",
         });
+
         navigate("/dashboard");
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Please check your credentials and try again.",
-          variant: "destructive",
-        });
       }
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -44,12 +67,12 @@ const Login = () => {
       <div className="w-full max-w-4xl">
         <Card className="shadow-elevated border-card-border animate-fade-in overflow-hidden">
           <div className="grid md:grid-cols-2">
-            {/* Left side - Illustration integrated into card */}
+            {/* Left side - Illustration */}
             <div className="hidden md:flex justify-center items-center p-8 bg-gradient-primary/5">
               <div className="relative w-full max-w-sm">
                 <div className="absolute inset-0 bg-gradient-primary rounded-full opacity-20 blur-3xl animate-pulse-glow"></div>
-                <img 
-                  src={heroStressImage} 
+                <img
+                  src={heroStressImage}
                   alt="Stress management illustration showing a businessman dealing with work stress"
                   className="relative z-10 w-full h-auto animate-scale-in rounded-lg"
                 />
@@ -113,8 +136,8 @@ const Login = () => {
                     </div>
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-gradient-primary hover:bg-gradient-primary/90 transition-all duration-300"
                     disabled={isLoading}
                   >
@@ -123,8 +146,8 @@ const Login = () => {
 
                   <div className="text-center text-sm">
                     <span className="text-muted-foreground">Don't have an account? </span>
-                    <Link 
-                      to="/signup" 
+                    <Link
+                      to="/signup"
                       className="text-primary hover:text-primary-dark transition-colors font-medium"
                     >
                       Sign Up
