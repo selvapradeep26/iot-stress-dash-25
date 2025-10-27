@@ -1,6 +1,12 @@
-// src/api.ts
-const API_URL = "http://localhost:5000/api/auth"; // change if your backend is deployed elsewhere
+// src/lib/api.ts
 
+const AUTH_API_URL = "http://localhost:5000/api/auth"; // auth backend
+const THINKSPEAK_API_URL = "http://localhost:5000/thinkSpeak"; // ThingSpeak backend
+const USER_API_URL = "http://localhost:5000/api/users"; // ✅ added for user operations
+
+// ----------------------
+// Interfaces
+// ----------------------
 export interface SignupData {
   username: string;
   email: string;
@@ -23,37 +29,67 @@ export interface AuthResponse {
   user: User;
 }
 
-// Signup function
-export const signup = async (data: SignupData): Promise<AuthResponse> => {
-  const res = await fetch(`${API_URL}/signup`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
+// ----------------------
+// ThingSpeak API
+// ----------------------
+export interface GSRFeed {
+  created_at: string;
+  field1: string; // raw GSR value from ThingSpeak
+  stressLevel?: string; // optional computed stress label for UI
+}
 
+export const fetchThingSpeakData = async (): Promise<GSRFeed[]> => {
+  const res = await fetch(THINKSPEAK_API_URL);
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.message || "Signup failed");
+    throw new Error(error.message || "Failed to fetch ThingSpeak data");
   }
 
   return res.json();
 };
 
-// Login function
-export const login = async (data: LoginData): Promise<AuthResponse> => {
-  const res = await fetch(`${API_URL}/login`, {
-    method: "POST",
+// ----------------------
+// User Info API
+// ----------------------
+export interface UserProfile {
+  id: string; // ✅ added
+  username: string;
+  email: string;
+  occupation: string;
+  lastLogin: string;
+}
+
+export const fetchUserProfile = async (token: string): Promise<UserProfile> => {
+  const res = await fetch(`${USER_API_URL}/me`, {
     headers: {
-      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(data),
   });
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.message || "Login failed");
+    throw new Error(error.message || "Failed to fetch user profile");
+  }
+
+  return res.json();
+};
+
+// ✅ (Optional) Update Occupation Helper
+export const updateUserOccupation = async (
+  id: string,
+  occupation: string
+): Promise<UserProfile> => {
+  const res = await fetch(`${USER_API_URL}/updateOccupation/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ occupation }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to update occupation");
   }
 
   return res.json();

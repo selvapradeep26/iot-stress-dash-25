@@ -1,36 +1,58 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 
 interface StressCircleProps {
-  value: number;
+  value: number; // Raw GSR value from ThingSpeak
+  baseline?: number; // Baseline for "relaxed" level
   size?: "sm" | "md" | "lg";
   animate?: boolean;
   className?: string;
 }
 
-const StressCircle = ({ value, size = "lg", animate = true, className }: StressCircleProps) => {
-  const [animatedValue, setAnimatedValue] = useState(0);
+const StressCircle = ({
+  value,
+  baseline = 2506,
+  size = "lg",
+  animate = true,
+  className,
+}: StressCircleProps) => {
+  const [animatedPercent, setAnimatedPercent] = useState(0);
+
+  // Convert GSR value to stress % (lower GSR = higher stress)
+  const { percent, level, color } = useMemo(() => {
+    const diff = baseline - value;
+
+    // Map deviation to stress percent (clamped 0–100)
+    let stressPercent = 0;
+    if (diff > 0) stressPercent = Math.min(100, (diff / baseline) * 100);
+    else stressPercent = 0;
+
+    let level = "🟢 Relaxed";
+    let color = "hsl(var(--stress-low))";
+
+    if (stressPercent > 70) {
+      level = "🔴 High Stress";
+      color = "hsl(var(--stress-high))";
+    } else if (stressPercent > 40) {
+      level = "🟡 Moderate Stress";
+      color = "hsl(var(--stress-medium))";
+    }
+
+    return { percent: Math.round(stressPercent), level, color };
+  }, [value, baseline]);
 
   useEffect(() => {
     if (animate) {
-      const timer = setTimeout(() => {
-        setAnimatedValue(value);
-      }, 100);
+      const timer = setTimeout(() => setAnimatedPercent(percent), 150);
       return () => clearTimeout(timer);
     } else {
-      setAnimatedValue(value);
+      setAnimatedPercent(percent);
     }
-  }, [value, animate]);
+  }, [percent, animate]);
 
-  const getStressLevel = (value: number) => {
-    if (value <= 30) return { level: "Low", color: "hsl(var(--stress-low))" };
-    if (value <= 60) return { level: "Medium", color: "hsl(var(--stress-medium))" };
-    if (value <= 80) return { level: "High", color: "hsl(var(--stress-high))" };
-    return { level: "Critical", color: "hsl(var(--stress-critical))" };
-  };
-
-  const getSize = (size: string) => {
-    switch (size) {
+  // --- Sizes ---
+  const getSize = (s: string) => {
+    switch (s) {
       case "sm": return { width: 120, height: 120, strokeWidth: 8, fontSize: "text-xl" };
       case "md": return { width: 160, height: 160, strokeWidth: 10, fontSize: "text-2xl" };
       case "lg": return { width: 200, height: 200, strokeWidth: 12, fontSize: "text-4xl" };
@@ -38,21 +60,15 @@ const StressCircle = ({ value, size = "lg", animate = true, className }: StressC
     }
   };
 
-  const { level, color } = getStressLevel(value);
   const { width, height, strokeWidth, fontSize } = getSize(size);
   const radius = (Math.min(width, height) - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const strokeDasharray = circumference;
-  const strokeDashoffset = circumference - (animatedValue / 100) * circumference;
+  const strokeDashoffset = circumference - (animatedPercent / 100) * circumference;
 
   return (
     <div className={cn("flex flex-col items-center", className)}>
       <div className="relative">
-        <svg
-          width={width}
-          height={height}
-          className="transform -rotate-90"
-        >
+        <svg width={width} height={height} className="transform -rotate-90">
           {/* Background circle */}
           <circle
             cx={width / 2}
@@ -70,26 +86,27 @@ const StressCircle = ({ value, size = "lg", animate = true, className }: StressC
             stroke={color}
             strokeWidth={strokeWidth}
             fill="transparent"
-            strokeDasharray={strokeDasharray}
+            strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
             className="transition-all duration-1000 ease-out"
-            style={{
-              filter: "drop-shadow(0 0 8px hsl(var(--primary) / 0.3))"
-            }}
           />
         </svg>
-        {/* Value text */}
-        <div className="absolute inset-0 flex items-center justify-center">
+
+        {/* % Value text */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className={cn("font-bold text-foreground", fontSize)}>
-            {Math.round(animatedValue)}
+            {animatedPercent}%
           </span>
         </div>
       </div>
-      {/* Level indicator */}
+
+      {/* Level text */}
       <div className="mt-4 text-center">
         <p className="text-sm text-muted-foreground">Level:</p>
-        <p className="font-semibold" style={{ color }}>{level}</p>
+        <p className="font-semibold" style={{ color }}>
+          {level}
+        </p>
       </div>
     </div>
   );
