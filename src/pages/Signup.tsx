@@ -3,7 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import wellnessImage from "@/assets/wellness-illustration.jpg";
@@ -22,26 +28,28 @@ const Signup = () => {
     setIsLoading(true);
 
     try {
-      // Call backend signup API
       const response = await fetch("http://localhost:5000/api/auth/signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: name, email, password }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
-      if (!response.ok) {
+      if (!response.ok || !data.token) {
         toast({
           title: "Signup failed",
-          description: data.message || "Please check your inputs and try again.",
+          description:
+            data.message || "Please check your inputs and try again.",
           variant: "destructive",
         });
       } else {
-        // Save token for future API calls
+        // ✅ Clear previous session & data
+        localStorage.clear();
+
+        // ✅ Store new user token
         localStorage.setItem("token", data.token);
+        if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
 
         toast({
           title: "Account created successfully!",
@@ -51,7 +59,7 @@ const Signup = () => {
         navigate("/dashboard");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Signup error:", err);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
@@ -67,19 +75,19 @@ const Signup = () => {
       <div className="w-full max-w-4xl">
         <Card className="shadow-elevated border-card-border animate-fade-in overflow-hidden">
           <div className="grid md:grid-cols-2">
-            {/* Left side - Illustration */}
+            {/* Left image */}
             <div className="hidden md:flex justify-center items-center p-8 bg-gradient-secondary/5">
               <div className="relative w-full max-w-sm">
                 <div className="absolute inset-0 bg-gradient-secondary rounded-full opacity-20 blur-3xl animate-pulse-glow"></div>
                 <img
                   src={wellnessImage}
-                  alt="Peaceful wellness illustration for mental health journey"
+                  alt="Wellness illustration"
                   className="relative z-10 w-full h-auto animate-scale-in rounded-lg"
                 />
               </div>
             </div>
 
-            {/* Right side - Signup form */}
+            {/* Right form */}
             <div className="p-8">
               <CardHeader className="space-y-1 text-center px-0 pb-6">
                 <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
@@ -91,10 +99,11 @@ const Signup = () => {
               </CardHeader>
               <CardContent className="px-0">
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Name */}
                   <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                         id="name"
                         type="text"
@@ -107,10 +116,11 @@ const Signup = () => {
                     </div>
                   </div>
 
+                  {/* Email */}
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                         id="email"
                         type="email"
@@ -123,10 +133,11 @@ const Signup = () => {
                     </div>
                   </div>
 
+                  {/* Password */}
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
@@ -140,7 +151,7 @@ const Signup = () => {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
@@ -154,17 +165,19 @@ const Signup = () => {
 
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-primary hover:bg-gradient-primary/90 transition-all duration-300"
+                    className="w-full bg-gradient-primary hover:bg-gradient-primary/90 transition-all"
                     disabled={isLoading}
                   >
                     {isLoading ? "Creating account..." : "Sign Up"}
                   </Button>
 
                   <div className="text-center text-sm">
-                    <span className="text-muted-foreground">Already have an account? </span>
+                    <span className="text-muted-foreground">
+                      Already have an account?{" "}
+                    </span>
                     <Link
                       to="/login"
-                      className="text-primary hover:text-primary-dark transition-colors font-medium"
+                      className="text-primary font-medium hover:text-primary-dark"
                     >
                       Login
                     </Link>

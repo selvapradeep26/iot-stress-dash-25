@@ -18,8 +18,18 @@ const StressCircle = ({
 }: StressCircleProps) => {
   const [animatedPercent, setAnimatedPercent] = useState(0);
 
-  // Convert GSR value to stress % (lower GSR = higher stress)
-  const { percent, level, color } = useMemo(() => {
+  // --- Handle value computation and disconnected logic ---
+  const { percent, level, color, isDisconnected } = useMemo(() => {
+    // ✅ If no signal (ThingSpeak or hardware disconnected)
+    if (value === 0 || value === null || value === undefined) {
+      return {
+        percent: 0,
+        level: "⚠️ Disconnected",
+        color: "#9ca3af", // gray-400
+        isDisconnected: true,
+      };
+    }
+
     const diff = baseline - value;
 
     // Map deviation to stress percent (clamped 0–100)
@@ -38,9 +48,10 @@ const StressCircle = ({
       color = "hsl(var(--stress-medium))";
     }
 
-    return { percent: Math.round(stressPercent), level, color };
+    return { percent: Math.round(stressPercent), level, color, isDisconnected: false };
   }, [value, baseline]);
 
+  // --- Animate progress ---
   useEffect(() => {
     if (animate) {
       const timer = setTimeout(() => setAnimatedPercent(percent), 150);
@@ -89,15 +100,24 @@ const StressCircle = ({
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
-            className="transition-all duration-1000 ease-out"
+            className={cn("transition-all duration-1000 ease-out", {
+              "opacity-50": isDisconnected,
+            })}
           />
         </svg>
 
         {/* % Value text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn("font-bold text-foreground", fontSize)}>
-            {animatedPercent}%
-          </span>
+          {isDisconnected ? (
+            <div className="flex flex-col items-center justify-center text-gray-400">
+              <span className="text-3xl">⚠️</span>
+              <span className="text-sm font-medium mt-1">No Data</span>
+            </div>
+          ) : (
+            <span className={cn("font-bold text-foreground", fontSize)}>
+              {animatedPercent}%
+            </span>
+          )}
         </div>
       </div>
 

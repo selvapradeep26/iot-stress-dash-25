@@ -7,4 +7,7 @@ const sensorSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 
+// ✅ Add index for faster queries
+sensorSchema.index({ userId: 1, timestamp: -1 });
+
 module.exports = mongoose.model('SensorData', sensorSchema);

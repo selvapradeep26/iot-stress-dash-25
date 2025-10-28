@@ -1,8 +1,8 @@
 // src/lib/api.ts
 
-const AUTH_API_URL = "http://localhost:5000/api/auth"; // auth backend
-const THINKSPEAK_API_URL = "http://localhost:5000/thinkSpeak"; // ThingSpeak backend
-const USER_API_URL = "http://localhost:5000/api/users"; // ✅ added for user operations
+const AUTH_API_URL = "http://localhost:5000/api/auth";
+const THINKSPEAK_API_URL = "http://localhost:5000/thinkSpeak";
+const USER_API_URL = "http://localhost:5000/api/users";
 
 // ----------------------
 // Interfaces
@@ -34,17 +34,51 @@ export interface AuthResponse {
 // ----------------------
 export interface GSRFeed {
   created_at: string;
-  field1: string; // raw GSR value from ThingSpeak
-  stressLevel?: string; // optional computed stress label for UI
+  field1: string | number;
+  heartRate?: number;
+  stressLevel?: string;
 }
 
+// ✅ Get live ThingSpeak data (for real-time monitoring)
 export const fetchThingSpeakData = async (): Promise<GSRFeed[]> => {
   const res = await fetch(THINKSPEAK_API_URL);
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error.message || "Failed to fetch ThingSpeak data");
   }
+  return res.json();
+};
 
+// ✅ Get user's saved historical data
+export const fetchUserThingSpeakData = async (userId: string): Promise<GSRFeed[]> => {
+  const res = await fetch(`${THINKSPEAK_API_URL}/user?userId=${userId}`);
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to fetch user data");
+  }
+  return res.json();
+};
+
+// ✅ Save current reading to user's history
+export const saveThingSpeakReading = async (
+  userId: string,
+  gsr: number,
+  heartRate: number,
+  token: string
+): Promise<any> => {
+  const res = await fetch(`${THINKSPEAK_API_URL}/save`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ userId, gsr, heartRate }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to save reading");
+  }
   return res.json();
 };
 
@@ -52,10 +86,11 @@ export const fetchThingSpeakData = async (): Promise<GSRFeed[]> => {
 // User Info API
 // ----------------------
 export interface UserProfile {
-  id: string; // ✅ added
+  id?: string;
+  _id?: string;
   username: string;
   email: string;
-  occupation: string;
+  occupation?: string;
   lastLogin: string;
 }
 
@@ -71,10 +106,15 @@ export const fetchUserProfile = async (token: string): Promise<UserProfile> => {
     throw new Error(error.message || "Failed to fetch user profile");
   }
 
-  return res.json();
+  const data = await res.json();
+  const normalized: UserProfile = {
+    ...data,
+    id: data.id || data._id,
+  };
+
+  return normalized;
 };
 
-// ✅ (Optional) Update Occupation Helper
 export const updateUserOccupation = async (
   id: string,
   occupation: string
@@ -92,5 +132,6 @@ export const updateUserOccupation = async (
     throw new Error(error.message || "Failed to update occupation");
   }
 
-  return res.json();
+  const data = await res.json();
+  return { ...data, id: data.id || data._id };
 };
