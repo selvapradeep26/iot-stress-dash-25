@@ -291,7 +291,7 @@ const Dashboard: React.FC = () => {
     if (!userInfo) return;
     try {
       const res = await fetch(
-        `http://localhost:5000/api/users/updateOccupation/${userInfo.id || userInfo._id}`,
+        `https://stressnet-backend-1.onrender.com/api/users/updateOccupation/${userInfo.id || userInfo._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
