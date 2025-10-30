@@ -1,11 +1,16 @@
 // src/lib/api.ts
 
-const AUTH_API_URL = "http://localhost:5000/api/auth";
-const THINKSPEAK_API_URL = "http://localhost:5000/thinkSpeak";
-const USER_API_URL = "http://localhost:5000/api/users";
+// ----------------------
+// 🌐 Base URLs (Render backend + Netlify frontend ready)
+// ----------------------
+const BASE_URL = "https://stressnet-backend-1.onrender.com";
+
+const AUTH_API_URL = `${BASE_URL}/api/auth`;
+const THINKSPEAK_API_URL = `${BASE_URL}/thinkSpeak`;
+const USER_API_URL = `${BASE_URL}/api/users`;
 
 // ----------------------
-// Interfaces
+// 🧩 Interfaces
 // ----------------------
 export interface SignupData {
   username: string;
@@ -29,9 +34,6 @@ export interface AuthResponse {
   user: User;
 }
 
-// ----------------------
-// ThingSpeak API
-// ----------------------
 export interface GSRFeed {
   created_at: string;
   field1: string | number;
@@ -39,11 +41,15 @@ export interface GSRFeed {
   stressLevel?: string;
 }
 
-// ✅ Get live ThingSpeak data (for real-time monitoring)
+// ----------------------
+// ⚙️ ThingSpeak API
+// ----------------------
+
+// ✅ Get live ThingSpeak data (real-time)
 export const fetchThingSpeakData = async (): Promise<GSRFeed[]> => {
   const res = await fetch(THINKSPEAK_API_URL);
   if (!res.ok) {
-    const error = await res.json();
+    const error = await res.json().catch(() => ({}));
     throw new Error(error.message || "Failed to fetch ThingSpeak data");
   }
   return res.json();
@@ -53,7 +59,7 @@ export const fetchThingSpeakData = async (): Promise<GSRFeed[]> => {
 export const fetchUserThingSpeakData = async (userId: string): Promise<GSRFeed[]> => {
   const res = await fetch(`${THINKSPEAK_API_URL}/user?userId=${userId}`);
   if (!res.ok) {
-    const error = await res.json();
+    const error = await res.json().catch(() => ({}));
     throw new Error(error.message || "Failed to fetch user data");
   }
   return res.json();
@@ -76,14 +82,14 @@ export const saveThingSpeakReading = async (
   });
 
   if (!res.ok) {
-    const error = await res.json();
+    const error = await res.json().catch(() => ({}));
     throw new Error(error.message || "Failed to save reading");
   }
   return res.json();
 };
 
 // ----------------------
-// User Info API
+// 👤 User Info API
 // ----------------------
 export interface UserProfile {
   id?: string;
@@ -94,6 +100,7 @@ export interface UserProfile {
   lastLogin: string;
 }
 
+// ✅ Get logged-in user's profile
 export const fetchUserProfile = async (token: string): Promise<UserProfile> => {
   const res = await fetch(`${USER_API_URL}/me`, {
     headers: {
@@ -102,19 +109,15 @@ export const fetchUserProfile = async (token: string): Promise<UserProfile> => {
   });
 
   if (!res.ok) {
-    const error = await res.json();
+    const error = await res.json().catch(() => ({}));
     throw new Error(error.message || "Failed to fetch user profile");
   }
 
   const data = await res.json();
-  const normalized: UserProfile = {
-    ...data,
-    id: data.id || data._id,
-  };
-
-  return normalized;
+  return { ...data, id: data.id || data._id };
 };
 
+// ✅ Update user's occupation
 export const updateUserOccupation = async (
   id: string,
   occupation: string
@@ -128,7 +131,7 @@ export const updateUserOccupation = async (
   });
 
   if (!res.ok) {
-    const error = await res.json();
+    const error = await res.json().catch(() => ({}));
     throw new Error(error.message || "Failed to update occupation");
   }
 

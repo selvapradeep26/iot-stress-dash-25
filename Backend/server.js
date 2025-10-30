@@ -11,16 +11,25 @@ const userRoutes = require('./routes/userRoute'); // ✅ Correct path
 const app = express();
 connectDB();
 
-app.use(cors());
+// ✅ Updated CORS configuration
+app.use(
+  cors({
+    origin: [
+      'http://localhost:5173', // for local development
+      'https://stressnet-1.netlify.app', // your deployed frontend
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
-// Existing routes
+// ✅ Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/sensor', sensorRoutes);
 app.use('/thinkSpeak', thinkSpeakRoutes);
-
-// ✅ New User route
 app.use('/api/users', userRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
