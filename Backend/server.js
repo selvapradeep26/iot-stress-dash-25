@@ -15,20 +15,27 @@ const app = express();
 connectDB();
 
 // ✅ CORS configuration
-app.use(
-  cors({
-    origin: [
-      'https://stressnet-1.netlify.app', // your deployed frontend
-      'http://localhost:5173',           // local dev
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: [
+    'https://stressnet-1.netlify.app', // deployed frontend
+    'http://localhost:5173',           // local frontend
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
-// ✅ Handle preflight requests (important for Render)
-app.options('*', cors());
+// ✅ Handle preflight requests for all routes safely
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.set('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.set('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.status(200).end();
+  }
+  next();
+});
 
 // ✅ Middleware
 app.use(express.json());
@@ -39,7 +46,7 @@ app.use('/api/sensor', sensorRoutes);
 app.use('/thinkSpeak', thinkSpeakRoutes);
 app.use('/api/users', userRoutes);
 
-// ✅ Health check route for Render
+// ✅ Health route for Render uptime check
 app.get('/', (req, res) => {
   res.status(200).send('🌐 StressNet Backend is running successfully!');
 });
