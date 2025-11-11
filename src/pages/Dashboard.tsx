@@ -36,6 +36,13 @@ import {
   Save,
   Edit3,
   Database,
+  AlertCircle,
+  X,
+  Wind,
+  Coffee,
+  Music,
+  Flower2,
+  Moon,
 } from "lucide-react";
 
 interface StressData {
@@ -52,14 +59,50 @@ const Dashboard: React.FC = () => {
   const [editingOccupation, setEditingOccupation] = useState(false);
   const [newOccupation, setNewOccupation] = useState("");
   const [isDataLoading, setIsDataLoading] = useState(true);
-  const [dataSource, setDataSource] = useState<"live" | "history">("history"); // Start with history mode
+  const [dataSource, setDataSource] = useState<"live" | "history">("history");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [lastDataTimestamp, setLastDataTimestamp] = useState<number>(Date.now());
+  
+  // Stress warning states
+  const [showRelaxationModal, setShowRelaxationModal] = useState(false);
+  const [breathingPhase, setBreathingPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
+  const [breathCount, setBreathCount] = useState(0);
 
   // Refs to prevent duplicate calls
   const isFetchingRef = useRef(false);
   const lastUserIdRef = useRef<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Calculate stress percentage
+  const calculateStressPercent = (value: number): number => {
+    if (value === 0) return 0;
+    const diff = baseline - value;
+    if (diff > 0) return Math.min(100, (diff / baseline) * 100);
+    return 0;
+  };
+
+  const currentStressPercent = calculateStressPercent(currentStress);
+  const isHighStress = currentStressPercent > 70;
+  const isModerateStress = currentStressPercent > 40 && currentStressPercent <= 70;
+  const showWarning = currentStressPercent > 40 && currentStress > 0;
+
+  // Breathing animation cycle
+  useEffect(() => {
+    if (!showRelaxationModal) return;
+
+    const cycle = () => {
+      setBreathingPhase('inhale');
+      setTimeout(() => setBreathingPhase('hold'), 4000);
+      setTimeout(() => setBreathingPhase('exhale'), 8000);
+      setTimeout(() => {
+        setBreathCount(prev => prev + 1);
+      }, 12000);
+    };
+
+    cycle();
+    const interval = setInterval(cycle, 12000);
+    return () => clearInterval(interval);
+  }, [showRelaxationModal]);
 
   // 🧠 Smooth average filter
   const smoothAverage = (values: number[]): number => {
@@ -81,14 +124,12 @@ const Dashboard: React.FC = () => {
       const data: GSRFeed[] = await fetchThingSpeakData();
       
       if (!data || data.length === 0) {
-        // No data received - start timeout to reset to zero
         console.log("⚠️ No data received from ThingSpeak");
         if (showLoading) setIsDataLoading(false);
         isFetchingRef.current = false;
         return;
       }
 
-      // Data received successfully - update timestamp
       setLastDataTimestamp(Date.now());
 
       const values = data.map((feed) => Number(feed.field1) || 0);
@@ -110,7 +151,6 @@ const Dashboard: React.FC = () => {
       
     } catch (err) {
       console.error("Failed to fetch live ThingSpeak data:", err);
-      // On error, don't reset immediately - let timeout handle it
     } finally {
       if (showLoading) setIsDataLoading(false);
       isFetchingRef.current = false;
@@ -128,7 +168,6 @@ const Dashboard: React.FC = () => {
       const data: GSRFeed[] = await fetchUserThingSpeakData(userId);
       
       if (!data || data.length === 0) {
-        // No saved data - explicitly set to zero
         setCurrentStress(0);
         setStressData([]);
         setBaseline(2506);
@@ -162,7 +201,6 @@ const Dashboard: React.FC = () => {
       
     } catch (err) {
       console.error("Failed to fetch user data:", err);
-      // On error, also set to zero
       setCurrentStress(0);
       setStressData([]);
     } finally {
@@ -183,19 +221,16 @@ const Dashboard: React.FC = () => {
       const data = await fetchUserProfile(token);
       const userId = (data.id || data._id).toString();
 
-      // Check if this is a new user
       const lastUserId = lastUserIdRef.current;
       
       if (lastUserId && lastUserId !== userId) {
         console.log("🔄 New user detected — clearing previous data");
-        // Clear everything for new user
         setStressData([]);
         setCurrentStress(0);
         setBaseline(2506);
-        setDataSource("history"); // Start new users with history mode showing zero
+        setDataSource("history");
       }
 
-      // Update refs
       lastUserIdRef.current = userId;
       setCurrentUserId(userId);
       localStorage.setItem("lastUserId", userId);
@@ -210,40 +245,37 @@ const Dashboard: React.FC = () => {
     }
   }, []);
 
-  // ⏱️ Initial load - fetch user info only once
+  // ⏱️ Initial load
   useEffect(() => {
     fetchUserInfo();
-  }, []); // Empty dependency array - runs once on mount
+  }, []);
 
   // Load data when user or data source changes
   useEffect(() => {
     if (!currentUserId) return;
 
-    // When switching to history mode, load user data
     if (dataSource === "live") {
       updateLiveData(true);
     } else {
-      // Check if user has any saved data
       updateUserData(currentUserId, true);
     }
   }, [currentUserId, dataSource, updateLiveData, updateUserData]);
 
-  // Polling for live data only (background updates without loading state)
+  // Polling for live data only
   useEffect(() => {
     if (dataSource !== "live" || !currentUserId) return;
 
     const interval = setInterval(() => {
-      updateLiveData(false); // Don't show loading during polling
-    }, 10000); // Poll every 10 seconds
+      updateLiveData(false);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [dataSource, currentUserId, updateLiveData]);
 
-  // ⏰ Hardware disconnect detection - reset to zero after 10 seconds of no data
+  // ⏰ Hardware disconnect detection
   useEffect(() => {
     if (dataSource !== "live") return;
 
-    // Check every second if hardware is disconnected
     const checkInterval = setInterval(() => {
       const timeSinceLastData = Date.now() - lastDataTimestamp;
       
@@ -252,14 +284,14 @@ const Dashboard: React.FC = () => {
         setCurrentStress(0);
         setStressData([]);
       }
-    }, 1000); // Check every second
+    }, 1000);
 
     return () => {
       clearInterval(checkInterval);
     };
   }, [lastDataTimestamp, dataSource]);
 
-  // 💾 Save current reading to user's history
+  // 💾 Save current reading
   const handleSaveReading = async () => {
     if (!userInfo || currentStress === 0) {
       alert("No reading to save");
@@ -336,9 +368,141 @@ const Dashboard: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const relaxationTips = [
+    { icon: <Wind className="h-5 w-5" />, title: "Deep Breathing", desc: "Take slow, deep breaths for 5 minutes" },
+    { icon: <Coffee className="h-5 w-5" />, title: "Take a Break", desc: "Step away from your work for 10 minutes" },
+    { icon: <Music className="h-5 w-5" />, title: "Listen to Music", desc: "Play calming music or nature sounds" },
+    { icon: <Flower2 className="h-5 w-5" />, title: "Stretch", desc: "Do gentle stretches to release tension" },
+    { icon: <Moon className="h-5 w-5" />, title: "Mindfulness", desc: "Practice 5 minutes of meditation" },
+    { icon: <Heart className="h-5 w-5" />, title: "Connect", desc: "Talk to a friend or loved one" },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-surface">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Stress Warning Banner */}
+      {showWarning && (
+        <div 
+          className={`fixed top-0 left-0 right-0 z-50 ${
+            isHighStress ? 'bg-red-500' : 'bg-yellow-500'
+          } text-white shadow-lg animate-slide-down`}
+        >
+          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-6 w-6 animate-pulse" />
+              <div>
+                <p className="font-semibold">
+                  {isHighStress ? '⚠️ High Stress Detected!' : '⚠️ Elevated Stress Level'}
+                </p>
+                <p className="text-sm opacity-90">
+                  Your stress level is at {currentStressPercent}%. Time to take care of yourself.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowRelaxationModal(true)}
+              className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              Show Relaxation Tips
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Relaxation Modal */}
+      {showRelaxationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-purple-500 text-white p-6 rounded-t-2xl">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">Take a Moment to Relax 🧘‍♀️</h2>
+                  <p className="text-blue-100">Your well-being matters. Let's reduce that stress together.</p>
+                </div>
+                <button
+                  onClick={() => setShowRelaxationModal(false)}
+                  className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Breathing Exercise */}
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Wind className="h-5 w-5 text-blue-500" />
+                  Guided Breathing Exercise
+                </h3>
+                
+                <div className="flex flex-col items-center">
+                  <div className="relative mb-6">
+                    <div 
+                      className={`w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 shadow-lg transition-all duration-[4000ms] ease-in-out ${
+                        breathingPhase === 'inhale' ? 'scale-150' : 
+                        breathingPhase === 'hold' ? 'scale-150' : 
+                        'scale-100'
+                      }`}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-white font-bold text-lg capitalize">{breathingPhase}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-center space-y-2">
+                    <p className="text-gray-700 font-medium">
+                      {breathingPhase === 'inhale' && '🌬️ Breathe in slowly through your nose (4 seconds)'}
+                      {breathingPhase === 'hold' && '⏸️ Hold your breath gently (4 seconds)'}
+                      {breathingPhase === 'exhale' && '😮‍💨 Exhale slowly through your mouth (4 seconds)'}
+                    </p>
+                    <p className="text-sm text-gray-500">Completed cycles: {breathCount}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Tips Grid */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Relaxation Tips</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {relaxationTips.map((tip, index) => (
+                    <div
+                      key={index}
+                      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow hover:border-blue-300"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="bg-blue-100 text-blue-600 p-2 rounded-lg">
+                          {tip.icon}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800">{tip.title}</h4>
+                          <p className="text-sm text-gray-600 mt-1">{tip.desc}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Additional Support */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold">💡 Remember:</span> If you're experiencing persistent high stress, 
+                  consider talking to a mental health professional or counselor.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowRelaxationModal(false)}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
+              >
+                I Feel Better Now 😊
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${showWarning ? 'pt-24' : ''}`}>
         {/* Header */}
         <header className="mb-8 animate-fade-in">
           <div className="flex justify-between items-center">
@@ -350,7 +514,6 @@ const Dashboard: React.FC = () => {
                 Monitor and track your stress levels for better mental health
               </p>
             </div>
-            {/* Data Source Toggle */}
             <Button
               variant="outline"
               onClick={toggleDataSource}
@@ -548,6 +711,36 @@ const Dashboard: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes slide-down {
+          from {
+            transform: translateY(-100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        .animate-slide-down {
+          animation: slide-down 0.5s ease-out;
+        }
+
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
